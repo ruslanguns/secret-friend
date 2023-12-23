@@ -1,6 +1,8 @@
 import { SecretFriend } from "~/components/secret-friend";
 import Nieve from "./nieve";
 
+export const runtime = "edge";
+
 export default async function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#123a4d] to-[#15162c] text-white">

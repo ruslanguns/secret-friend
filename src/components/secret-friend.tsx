@@ -29,7 +29,7 @@ import { cn } from "~/lib/utils";
 export function SecretFriend() {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [startedGame, setStartedGame] = useState(() => {
-    const item = localStorage.getItem("startedGame");
+    const item = localStorage.getItem("startedGame") ?? "";
     return item === "true";
   });
   const [playedParticipants, setPlayedParticipants] = useState<string[]>(() => {
@@ -55,7 +55,16 @@ export function SecretFriend() {
 
   const [selectedParticipant, setSelectedParticipant] =
     React.useState<string>();
-  const [participants, setParticipants] = React.useState<string[]>([]);
+
+  const [participants, setParticipants] = React.useState<string[]>(() => {
+    try {
+      const item = localStorage.getItem("participants");
+      return item ? (JSON.parse(item) as string[]) : [];
+    } catch (error) {
+      localStorage.setItem("participants", "[]");
+      return [];
+    }
+  });
 
   const onParticipantAdd = () => {
     const participant = inputRef.current?.value;
@@ -65,16 +74,13 @@ export function SecretFriend() {
       return;
     }
 
-    // error if already exists
     if (participants?.includes(participant)) {
       toast.error("Tu nombre ya está en la lista de participantes!");
       return;
     }
 
-    // clean input
     inputRef.current.value = "";
 
-    // Normalizar, capitalizar cada palabra y eliminar espacios innecesarios
     const normalizedParticipant = participant
       .split(" ")
       .map((word) => {
@@ -85,6 +91,10 @@ export function SecretFriend() {
       .join(" ");
 
     setParticipants([...participants, normalizedParticipant]);
+    localStorage.setItem(
+      "participants",
+      JSON.stringify([...participants, normalizedParticipant]),
+    );
 
     toast.success("Esooo!, ya estás en la lista!", {
       style: {
@@ -318,7 +328,6 @@ export function SecretFriend() {
 
                 <button
                   onClick={() => {
-                    // Mostrar error si el juego ha iniciado, no peudes elimianr
                     if (startedGame) {
                       toast.error(
                         "No puedes eliminar participantes una vez iniciado el juego.",
@@ -331,6 +340,13 @@ export function SecretFriend() {
                       newParticipants.splice(i, 1);
                       return newParticipants;
                     });
+
+                    localStorage.setItem(
+                      "participants",
+                      JSON.stringify([
+                        ...participants.filter((p) => p !== participant),
+                      ]),
+                    );
                   }}
                   className="absolute right-1 hidden h-5 w-5 items-center justify-center rounded-full bg-white text-red-950 transition-all duration-300 hover:bg-white/70 group-hover:flex"
                 >
@@ -346,7 +362,6 @@ export function SecretFriend() {
         )}
       </div>
 
-      {/* Resumen */}
       <div className="mt-10 w-full max-w-sm">
         <h2 className="mb-4 font-serif text-4xl font-bold">Resumen</h2>
         <div className="flex flex-col gap-4">
