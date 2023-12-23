@@ -289,7 +289,13 @@ export function SecretFriend() {
 
         {gameStarted && participants?.length > 0 && (
           <>
-            <Dialog>
+            <Dialog
+              onOpenChange={(open) => {
+                if (!open) {
+                  setFriend("");
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button
                   variant="default"
