@@ -78,13 +78,6 @@ export function SecretFriend() {
       return;
     }
 
-    if (participants?.includes(participant)) {
-      toast.error("Tu nombre ya está en la lista de participantes!");
-      return;
-    }
-
-    inputRef.current.value = "";
-
     const normalizedParticipant = participant
       .split(" ")
       .map((word) => {
@@ -93,6 +86,13 @@ export function SecretFriend() {
         }
       })
       .join(" ");
+
+    if (participants?.includes(normalizedParticipant)) {
+      toast.error("Tu nombre ya está en la lista de participantes!");
+      return;
+    }
+
+    inputRef.current.value = "";
 
     setParticipants([...participants, normalizedParticipant]);
 
@@ -212,7 +212,7 @@ export function SecretFriend() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl bg-white/10 p-4">
+    <div className="flex flex-col items-center justify-center rounded-2xl bg-white/10 p-8">
       <p className="mb-5 max-w-lg text-center text-sm text-white">
         ¡Añade tu nombre y el de tus amigos para descubrir quién será tu amigo
         secreto! Simplemente selecciona tu nombre de la lista y revela la
@@ -233,7 +233,7 @@ export function SecretFriend() {
             }
           }}
           className={cn(
-            "placeholder:font-serif2 border-white/30 bg-white/20 placeholder:text-xl placeholder:text-white",
+            "text-bold placeholder:font-serif2 font-serif2 border-white/30 bg-white/20 text-center text-xl placeholder:text-center placeholder:text-xl placeholder:text-white",
             {
               hidden: gameStarted,
             },
@@ -371,13 +371,6 @@ export function SecretFriend() {
           </div>
         </div>
       </div>
-
-      <p className="mt-10 text-sm text-white">
-        Made with ❤️ by{" "}
-        <Link className="underline" href="#">
-          Ruslan
-        </Link>
-      </p>
     </div>
   );
 }
