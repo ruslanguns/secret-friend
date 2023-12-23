@@ -84,6 +84,7 @@ export function SecretFriend() {
         })
         .catch((error) => {
           console.error("Error reproduciendo la música de fondo: ", error);
+          setIsMusicPlaying(false);
         });
     } else {
       audio.pause();
