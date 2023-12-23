@@ -15,9 +15,9 @@ export default async function Home() {
         </h1>
         <SecretFriend />
       </div>
-      <p className="text-sm text-white">
+      <p className="my-8 text-sm text-white">
         Made with ❤️ by{" "}
-        <Link className="underline" href="#">
+        <Link className="underline" href="https://x.com/ruslangonzalez">
           Ruslan
         </Link>
       </p>
