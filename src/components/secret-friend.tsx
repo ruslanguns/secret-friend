@@ -4,7 +4,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
 import React, { useState } from "react";
 import { XIcon } from "lucide-react";
 import toast from "react-hot-toast";
@@ -35,6 +34,7 @@ const LS_KEYS = {
 
 export function SecretFriend() {
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const [friend, setFriend] = useState("");
   const [gameStarted, setGameStarted] = useState(() => {
     const item = localStorage.getItem(LS_KEYS.gamestarted) ?? "";
     return item === "true";
@@ -157,6 +157,11 @@ export function SecretFriend() {
 
   const onSecretFriendReveal = () => {
     try {
+      if (friend) {
+        setFriend("");
+        return;
+      }
+
       if (!selected) {
         toast.error("Por favor, selecciona tu nombre de la lista.");
         return;
@@ -199,6 +204,7 @@ export function SecretFriend() {
         JSON.stringify([...played, selected]),
       );
       setPlayed([...played, selected]);
+      setFriend(secretFriend);
 
       // Mostrar al amigo secreto
       toast.success(`Tu amigo secreto es: ${secretFriend}`);
@@ -272,45 +278,66 @@ export function SecretFriend() {
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-gradient-to-b from-[#123a4d] to-[#15162c] text-white ">
-                <DialogHeader>
-                  <DialogTitle>
-                    A un paso de conocer tu amigo secreto!
-                  </DialogTitle>
-                  <DialogDescription className="text-white">
-                    Elije tu nombre de la lista, y te diremos quién es tu amigo
-                    secreto.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <Select onValueChange={setSelected}>
-                    <SelectTrigger className="font-serif2 border-white/70 bg-[#123a4d]/80 text-xl placeholder:text-xl placeholder:text-white">
-                      <SelectValue
-                        placeholder="¿Quién eres?, elige tu nombre 👇🏻"
-                        className="placeholder:font-serif2 text-xl"
-                      />
-                    </SelectTrigger>
-                    <SelectContent className="placeholder:font-serif2 border-white/70 bg-gradient-to-b from-[#123a4d]/95 to-[#15162c]/95 placeholder:text-xl placeholder:text-white">
-                      {participants.map((participant, i) => (
-                        <SelectItem
-                          key={i}
-                          value={participant}
-                          className={cn("font-serif2 text-xl text-white", {
-                            "line-through": played.includes(participant),
-                          })}
-                        >
-                          {participant}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {!friend ? (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle>
+                        A un paso de conocer tu amigo secreto!
+                      </DialogTitle>
+                      <DialogDescription className="text-white">
+                        Elije tu nombre de la lista, y te diremos quién es tu
+                        amigo secreto.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <Select onValueChange={setSelected}>
+                        <SelectTrigger className="font-serif2 border-white/70 bg-[#123a4d]/80 text-xl placeholder:text-xl placeholder:text-white">
+                          <SelectValue
+                            placeholder="¿Quién eres?, elige tu nombre 👇🏻"
+                            className="placeholder:font-serif2 text-xl"
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="placeholder:font-serif2 border-white/70 bg-gradient-to-b from-[#123a4d]/95 to-[#15162c]/95 placeholder:text-xl placeholder:text-white">
+                          {participants.map((participant, i) => (
+                            <SelectItem
+                              key={i}
+                              value={participant}
+                              className={cn("font-serif2 text-xl text-white", {
+                                "line-through": played.includes(participant),
+                              })}
+                            >
+                              {participant}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle>Tu amigo secreto es:</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid text-center">
+                      <span className="p-5  font-serif text-6xl font-bold">
+                        "{friend}"
+                      </span>
+                      <span>
+                        <strong>OJO:</strong> ¡No se lo digas a nadie!{" "}
+                        <span className="text-4xl">🤫</span>
+                      </span>
+                    </div>
+                  </>
+                )}
+
                 <DialogFooter>
                   <Button
                     type="button"
+                    variant={friend ? "secondary" : "default"}
                     onClick={onSecretFriendReveal}
-                    className="font-serif2 w-full text-xl font-bold"
+                    className={cn("font-serif2 w-full text-xl font-bold")}
                   >
-                    Revelar! 🎉
+                    {friend ? "Ocultar" : "Revelar! 🎉"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
