@@ -33,8 +33,11 @@ const LS_KEYS = {
 };
 
 export function SecretFriend() {
+  const [audio] = useState(new Audio("/background-music.mp3"));
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [friend, setFriend] = useState("");
+  const [selected, setSelected] = React.useState<string>();
   const [gameStarted, setGameStarted] = useState(() => {
     const item = localStorage.getItem(LS_KEYS.gamestarted) ?? "";
     return item === "true";
@@ -57,9 +60,6 @@ export function SecretFriend() {
       return [];
     }
   });
-
-  const [selected, setSelected] = React.useState<string>();
-
   const [participants, setParticipants] = React.useState<string[]>(() => {
     try {
       const item = localStorage.getItem(LS_KEYS.participants);
@@ -69,6 +69,26 @@ export function SecretFriend() {
       return [];
     }
   });
+
+  React.useEffect(() => {
+    setIsMusicPlaying(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (isMusicPlaying) {
+      audio
+        .play()
+        .then(() => {
+          audio.loop = true;
+          audio.volume = 0.1;
+        })
+        .catch((error) => {
+          console.error("Error reproduciendo la música de fondo: ", error);
+        });
+    } else {
+      audio.pause();
+    }
+  }, [audio, isMusicPlaying]);
 
   const onParticipantAdd = () => {
     const participant = inputRef.current?.value;
@@ -319,7 +339,7 @@ export function SecretFriend() {
                       <DialogTitle>Tu amigo secreto es:</DialogTitle>
                     </DialogHeader>
                     <div className="grid text-center">
-                      <span className="p-5  font-serif text-6xl font-bold">
+                      <span className="p-5 font-serif text-6xl font-bold">
                         "{friend}"
                       </span>
                       <span>
@@ -352,6 +372,15 @@ export function SecretFriend() {
           </>
         )}
       </div>
+
+      <Button
+        onClick={() => setIsMusicPlaying((prev) => !prev)}
+        variant="link"
+        className="font-serif2 mt-4 text-white hover:no-underline"
+      >
+        Música{" "}
+        <span className="ml-2 text-lg">{isMusicPlaying ? "🔊" : "🔇"}</span>
+      </Button>
 
       <div className="mt-10 w-full max-w-sm">
         <h2 className="mb-4 font-serif text-4xl font-bold">Participantes</h2>
