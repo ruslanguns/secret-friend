@@ -156,6 +156,14 @@ export function SecretFriend() {
             hidden: startedGame,
           })}
           onClick={() => {
+            // el número de participantes debe ser par para iniciar el juego.
+            if (participants?.length % 2 !== 0) {
+              toast.error(
+                "El número de participantes debe ser par para iniciar el juego.",
+              );
+              return;
+            }
+
             localStorage.setItem("startedGame", "true");
             setStartedGame(true);
           }}
