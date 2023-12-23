@@ -26,42 +26,46 @@ import {
 } from "@/components/ui/select";
 import { cn } from "~/lib/utils";
 
+const LS_KEYS = {
+  participants: "Amigo_Secreto___participants",
+  played: "Amigo_Secreto___played_participants",
+  assigned: "Amigo_Secreto___assigned_participants",
+  gamestarted: "Amigo_Secreto___game_started",
+};
+
 export function SecretFriend() {
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [startedGame, setStartedGame] = useState(() => {
-    const item = localStorage.getItem("startedGame") ?? "";
+  const [gameStarted, setGameStarted] = useState(() => {
+    const item = localStorage.getItem(LS_KEYS.gamestarted) ?? "";
     return item === "true";
   });
-  const [playedParticipants, setPlayedParticipants] = useState<string[]>(() => {
+  const [played, setPlayed] = useState<string[]>(() => {
     try {
-      const item = localStorage.getItem("playedParticipants");
+      const item = localStorage.getItem(LS_KEYS.played);
       return item ? (JSON.parse(item) as string[]) : [];
     } catch (error) {
-      localStorage.setItem("playedParticipants", "[]");
+      localStorage.setItem(LS_KEYS.played, "[]");
       return [];
     }
   });
-  const [assignedParticipants, setAssignedParticipants] = useState<string[]>(
-    () => {
-      try {
-        const item = localStorage.getItem("assignedParticipants");
-        return item ? (JSON.parse(item) as string[]) : [];
-      } catch (error) {
-        localStorage.setItem("assignedParticipants", "[]");
-        return [];
-      }
-    },
-  );
+  const [assigned, setAssigned] = useState<string[]>(() => {
+    try {
+      const item = localStorage.getItem(LS_KEYS.assigned);
+      return item ? (JSON.parse(item) as string[]) : [];
+    } catch (error) {
+      localStorage.setItem(LS_KEYS.assigned, "[]");
+      return [];
+    }
+  });
 
-  const [selectedParticipant, setSelectedParticipant] =
-    React.useState<string>();
+  const [selected, setSelected] = React.useState<string>();
 
   const [participants, setParticipants] = React.useState<string[]>(() => {
     try {
-      const item = localStorage.getItem("participants");
+      const item = localStorage.getItem(LS_KEYS.participants);
       return item ? (JSON.parse(item) as string[]) : [];
     } catch (error) {
-      localStorage.setItem("participants", "[]");
+      localStorage.setItem(LS_KEYS.participants, "[]");
       return [];
     }
   });
@@ -91,8 +95,9 @@ export function SecretFriend() {
       .join(" ");
 
     setParticipants([...participants, normalizedParticipant]);
+
     localStorage.setItem(
-      "participants",
+      LS_KEYS.participants,
       JSON.stringify([...participants, normalizedParticipant]),
     );
 
@@ -107,6 +112,103 @@ export function SecretFriend() {
         secondary: "#FFFAEE",
       },
     });
+  };
+
+  const onParticipantRemove = (participant: string, index: number) => {
+    if (gameStarted) {
+      toast.error(
+        "No puedes eliminar participantes una vez iniciado el juego.",
+      );
+      return;
+    }
+
+    setParticipants((prev) => {
+      const newParticipants = [...prev];
+      newParticipants.splice(index, 1);
+      return newParticipants;
+    });
+
+    localStorage.setItem(
+      LS_KEYS.participants,
+      JSON.stringify([...participants.filter((p) => p !== participant)]),
+    );
+  };
+
+  const onGameStart = () => {
+    if (participants?.length % 2 !== 0) {
+      toast.error(
+        "El número de participantes debe ser par para iniciar el juego.",
+      );
+      return;
+    }
+
+    localStorage.setItem(LS_KEYS.gamestarted, "true");
+    setGameStarted(true);
+  };
+
+  const onGameEnd = () => {
+    localStorage.setItem(LS_KEYS.gamestarted, "false");
+    setGameStarted(false);
+    localStorage.setItem(LS_KEYS.played, "[]");
+    setPlayed([]);
+    localStorage.setItem(LS_KEYS.assigned, "[]");
+    setAssigned([]);
+  };
+
+  const onSecretFriendReveal = () => {
+    try {
+      if (!selected) {
+        toast.error("Por favor, selecciona tu nombre de la lista.");
+        return;
+      }
+
+      if (played.includes(selected)) {
+        toast.error("Ya has jugado!");
+        return;
+      }
+
+      // Filtrar la lista de participantes
+      const availableParticipants = participants.filter(
+        (p) => p !== selected && !assigned.includes(p),
+      );
+
+      if (availableParticipants.length === 0) {
+        toast.error("No hay más amigos secretos disponibles.");
+        return;
+      }
+
+      // Elegir un amigo secreto al azar
+      const secretFriend =
+        availableParticipants[
+          Math.floor(Math.random() * availableParticipants.length)
+        ];
+
+      if (!secretFriend) {
+        toast.error("No hay más amigos secretos disponibles.");
+        return;
+      }
+
+      localStorage.setItem(
+        LS_KEYS.assigned,
+        JSON.stringify([...assigned, secretFriend]),
+      );
+      setAssigned([...assigned, secretFriend]);
+
+      localStorage.setItem(
+        LS_KEYS.played,
+        JSON.stringify([...played, selected]),
+      );
+      setPlayed([...played, selected]);
+
+      // Mostrar al amigo secreto
+      toast.success(`Tu amigo secreto es: ${secretFriend}`);
+    } catch (error) {
+      console.error("Error en el juego de amigo secreto: ", error);
+      localStorage.setItem(LS_KEYS.played, "[]");
+      localStorage.setItem(LS_KEYS.assigned, "[]");
+
+      toast.error("Ocurrió un error inesperado.");
+    }
   };
 
   return (
@@ -133,18 +235,16 @@ export function SecretFriend() {
           className={cn(
             "placeholder:font-serif2 border-white/30 bg-white/20 placeholder:text-xl placeholder:text-white",
             {
-              hidden: startedGame,
+              hidden: gameStarted,
             },
           )}
         />
         <Button
           variant="default"
           className={cn("font-serif2 mb-4 w-full text-xl font-bold", {
-            hidden: startedGame,
+            hidden: gameStarted,
           })}
-          onClick={() => {
-            onParticipantAdd();
-          }}
+          onClick={onParticipantAdd}
         >
           Incluir participante
         </Button>
@@ -153,25 +253,14 @@ export function SecretFriend() {
           variant="secondary"
           disabled={participants?.length === 0}
           className={cn("font-serif2 rounded-full text-xl font-bold", {
-            hidden: startedGame,
+            hidden: gameStarted,
           })}
-          onClick={() => {
-            // el número de participantes debe ser par para iniciar el juego.
-            if (participants?.length % 2 !== 0) {
-              toast.error(
-                "El número de participantes debe ser par para iniciar el juego.",
-              );
-              return;
-            }
-
-            localStorage.setItem("startedGame", "true");
-            setStartedGame(true);
-          }}
+          onClick={onGameStart}
         >
           Iniciar el juego!
         </Button>
 
-        {startedGame && participants?.length > 0 && (
+        {gameStarted && participants?.length > 0 && (
           <>
             <Dialog>
               <DialogTrigger asChild>
@@ -193,7 +282,7 @@ export function SecretFriend() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <Select onValueChange={setSelectedParticipant}>
+                  <Select onValueChange={setSelected}>
                     <SelectTrigger className="font-serif2 border-white/70 bg-[#123a4d]/80 text-xl placeholder:text-xl placeholder:text-white">
                       <SelectValue
                         placeholder="¿Quién eres?, elige tu nombre 👇🏻"
@@ -206,8 +295,7 @@ export function SecretFriend() {
                           key={i}
                           value={participant}
                           className={cn("font-serif2 text-xl text-white", {
-                            "line-through":
-                              playedParticipants.includes(participant),
+                            "line-through": played.includes(participant),
                           })}
                         >
                           {participant}
@@ -219,86 +307,7 @@ export function SecretFriend() {
                 <DialogFooter>
                   <Button
                     type="button"
-                    onClick={() => {
-                      try {
-                        if (!selectedParticipant) {
-                          toast.error(
-                            "Por favor, selecciona tu nombre de la lista.",
-                          );
-                          return;
-                        }
-
-                        if (playedParticipants.includes(selectedParticipant)) {
-                          toast.error("Ya has jugado!");
-                          return;
-                        }
-
-                        // Filtrar la lista de participantes
-                        const availableParticipants = participants.filter(
-                          (p) =>
-                            p !== selectedParticipant &&
-                            !assignedParticipants.includes(p),
-                        );
-
-                        if (availableParticipants.length === 0) {
-                          toast.error(
-                            "No hay más amigos secretos disponibles.",
-                          );
-                          return;
-                        }
-
-                        // Elegir un amigo secreto al azar
-                        const secretFriend =
-                          availableParticipants[
-                            Math.floor(
-                              Math.random() * availableParticipants.length,
-                            )
-                          ];
-
-                        if (!secretFriend) {
-                          toast.error(
-                            "No hay más amigos secretos disponibles.",
-                          );
-                          return;
-                        }
-
-                        localStorage.setItem(
-                          "assignedParticipants",
-                          JSON.stringify([
-                            ...assignedParticipants,
-                            secretFriend,
-                          ]),
-                        );
-                        setAssignedParticipants([
-                          ...assignedParticipants,
-                          secretFriend,
-                        ]);
-
-                        localStorage.setItem(
-                          "playedParticipants",
-                          JSON.stringify([
-                            ...playedParticipants,
-                            selectedParticipant,
-                          ]),
-                        );
-                        setPlayedParticipants([
-                          ...playedParticipants,
-                          selectedParticipant,
-                        ]);
-
-                        // Mostrar al amigo secreto
-                        toast.success(`Tu amigo secreto es: ${secretFriend}`);
-                      } catch (error) {
-                        console.error(
-                          "Error en el juego de amigo secreto: ",
-                          error,
-                        );
-                        localStorage.setItem("playedParticipants", "[]");
-                        localStorage.setItem("assignedParticipants", "[]");
-
-                        toast.error("Ocurrió un error inesperado.");
-                      }
-                    }}
+                    onClick={onSecretFriendReveal}
                     className="font-serif2 w-full text-xl font-bold"
                   >
                     Revelar! 🎉
@@ -309,14 +318,7 @@ export function SecretFriend() {
             <Button
               variant="link"
               className={cn("w-full font-sans text-white underline ", {})}
-              onClick={() => {
-                localStorage.setItem("startedGame", "false");
-                setStartedGame(false);
-                localStorage.setItem("playedParticipants", "[]");
-                setPlayedParticipants([]);
-                localStorage.setItem("assignedParticipants", "[]");
-                setAssignedParticipants([]);
-              }}
+              onClick={onGameEnd}
             >
               Terminar el juego!
             </Button>
@@ -335,27 +337,7 @@ export function SecretFriend() {
                 </span>
 
                 <button
-                  onClick={() => {
-                    if (startedGame) {
-                      toast.error(
-                        "No puedes eliminar participantes una vez iniciado el juego.",
-                      );
-                      return;
-                    }
-
-                    setParticipants((prev) => {
-                      const newParticipants = [...prev];
-                      newParticipants.splice(i, 1);
-                      return newParticipants;
-                    });
-
-                    localStorage.setItem(
-                      "participants",
-                      JSON.stringify([
-                        ...participants.filter((p) => p !== participant),
-                      ]),
-                    );
-                  }}
+                  onClick={() => onParticipantRemove(participant, i)}
                   className="absolute right-1 hidden h-5 w-5 items-center justify-center rounded-full bg-white text-red-950 transition-all duration-300 hover:bg-white/70 group-hover:flex"
                 >
                   <XIcon />
@@ -381,15 +363,11 @@ export function SecretFriend() {
             <p className="text-base text-white">
               Participantes que ¡Ya Jugaron!
             </p>
-            <p className="text-base text-white">
-              {playedParticipants?.length ?? 0}
-            </p>
+            <p className="text-base text-white">{played?.length ?? 0}</p>
           </div>
           <div className="flex justify-between">
             <p className="text-base text-white">Amigos Secretos Asignados</p>
-            <p className="text-base text-white">
-              {assignedParticipants?.length ?? 0}
-            </p>
+            <p className="text-base text-white">{assigned?.length ?? 0}</p>
           </div>
         </div>
       </div>
